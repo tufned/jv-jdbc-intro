@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import mate.academy.db.DbConnectionManager;
+import mate.academy.exceptions.DataProcessingException;
 import mate.academy.lib.Dao;
 import mate.academy.model.Book;
 
@@ -26,7 +27,7 @@ public class BookDaoImpl implements BookDao {
 
             int affectedRows = statement.executeUpdate();
             if (affectedRows == 0) {
-                throw new RuntimeException("Unable to insert");
+                throw new DataProcessingException("Unable to insert");
             }
 
             ResultSet generatedKeys = statement.getGeneratedKeys();
@@ -35,7 +36,7 @@ public class BookDaoImpl implements BookDao {
                 book.setId(id);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Could not execute query", e);
+            throw new DataProcessingException("Could not create book: " + book.toString(), e);
         }
         return book;
     }
@@ -48,7 +49,7 @@ public class BookDaoImpl implements BookDao {
             statement.setLong(1, id);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                Long entityId = resultSet.getLong(Columns.ID.getColumn());
+                Long entityId = resultSet.getObject(Columns.ID.getColumn(), Long.class);
                 String title = resultSet.getString(Columns.TITLE.getColumn());
                 BigDecimal price =
                         resultSet.getObject(Columns.PRICE.getColumn(), BigDecimal.class);
@@ -56,7 +57,7 @@ public class BookDaoImpl implements BookDao {
             }
             return Optional.empty();
         } catch (SQLException e) {
-            throw new RuntimeException("Could not execute query", e);
+            throw new DataProcessingException("Could not find book with id = " + id, e);
         }
     }
 
@@ -68,7 +69,7 @@ public class BookDaoImpl implements BookDao {
              ResultSet resultSet = statement.executeQuery()) {
             ArrayList<Book> booksList = new ArrayList<>();
             while (resultSet.next()) {
-                Long id = resultSet.getLong(Columns.ID.getColumn());
+                Long id = resultSet.getObject(Columns.ID.getColumn(), Long.class);
                 String title = resultSet.getString(Columns.TITLE.getColumn());
                 BigDecimal price =
                         resultSet.getObject(Columns.PRICE.getColumn(), BigDecimal.class);
@@ -76,7 +77,7 @@ public class BookDaoImpl implements BookDao {
             }
             return booksList;
         } catch (SQLException e) {
-            throw new RuntimeException("Could not execute query", e);
+            throw new DataProcessingException("Could not get books", e);
         }
     }
 
@@ -91,10 +92,10 @@ public class BookDaoImpl implements BookDao {
 
             int affectedRows = statement.executeUpdate();
             if (affectedRows == 0) {
-                throw new RuntimeException("Unable to update");
+                throw new DataProcessingException("Unable to update");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Could not execute query", e);
+            throw new DataProcessingException("Could not update book: " + book.toString(), e);
         }
         return book;
     }
@@ -106,12 +107,9 @@ public class BookDaoImpl implements BookDao {
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, id);
             int affectedRows = statement.executeUpdate();
-            if (affectedRows == 0) {
-                throw new RuntimeException("Unable to delete");
-            }
-            return true;
+            return affectedRows > 0;
         } catch (SQLException e) {
-            throw new RuntimeException("Could not execute query", e);
+            throw new DataProcessingException("Could not delete book with id = " + id, e);
         }
     }
 

@@ -2,6 +2,7 @@ package mate.academy;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import mate.academy.dao.BookDao;
 import mate.academy.lib.Injector;
@@ -23,7 +24,8 @@ public class Main {
                 .map(Book::toString)
                 .collect(Collectors.joining()));
 
-        bookDao.findById(book.getId());
+        Optional<Book> foundBookById = bookDao.findById(book.getId());
+        System.out.println(foundBookById);
 
         book = new Book(book.getId(), "The Ultimate Book", new BigDecimal("99.9"));
         Book updatedBook = bookDao.update(book);
